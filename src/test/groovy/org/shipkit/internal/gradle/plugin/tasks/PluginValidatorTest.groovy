@@ -5,7 +5,7 @@ import testutil.PluginSpecification
 class PluginValidatorTest extends PluginSpecification {
 
     private static final String META_INF_GRADLE_PLUGINS = 'src/main/resources/META-INF/gradle-plugins'
-    private static final String PLUGIN_PACKAGE = 'src/main/groovy/org/sipkit/gradle/'
+    private static final String PLUGIN_PACKAGE = 'src/main/groovy/org/shipkit/gradle/'
 
     def "validate plugin properties files"(propertiesFileName, className, extension) {
         given:
@@ -27,6 +27,24 @@ class PluginValidatorTest extends PluginSpecification {
         'org.shipkit.my-sample' | 'MySamplePlugin'   | 'groovy'
     }
 
+    def "validate wrong properties file content"(propertiesContent, errorMessage) {
+        given:
+        project.file(META_INF_GRADLE_PLUGINS).mkdirs()
+        project.file(PLUGIN_PACKAGE).mkdirs()
+        Set propertiesFiles = [project.file("$META_INF_GRADLE_PLUGINS/org.shipkit.my-sample.properties") << propertiesContent]
+        Set pluginFiles = [project.file("$PLUGIN_PACKAGE/MySamplePlugin.groovy") << "some content"]
+
+        when:
+        new PluginValidator().validate(pluginFiles, propertiesFiles)
+        then:
+        RuntimeException ex = thrown()
+        ex.message.contains errorMessage
+
+        where:
+        propertiesContent                                       | errorMessage
+        "implementation-class=org.shipkit.gradle.AnotherClass"  | 'src/main/resources/META-INF/gradle-plugins/org.shipkit.my-sample.properties does not point to the expected class'
+        'anotherKey=value'                                      | 'implementation-class property not set'
+    }
 
     def "validate missing properties file"() {
         given:

@@ -3,10 +3,12 @@ package org.shipkit.internal.gradle.plugin.tasks;
 import org.gradle.api.GradleException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.shipkit.internal.util.PropertiesUtil;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import static org.shipkit.internal.gradle.plugin.tasks.PluginUtil.DOT_PROPERTIES;
@@ -35,6 +37,7 @@ public class PluginValidator {
                         if (pluginExtractedFromProperties.toLowerCase().endsWith(convertedPropertiesFleName.toLowerCase())) {
                             matchingPropertiesFound = true;
                             LOG.info("plugin " + plugin + " has properties file " + gradleProperties);
+                            validatePropertiesContent(properties, plugin);
                             break;
                         }
                     }
@@ -46,6 +49,21 @@ public class PluginValidator {
         }
 
         throwExceptionIfNeeded(missingPropertiesFiles);
+    }
+
+    private void validatePropertiesContent(File propertiesFile, File plugin) {
+        Properties properties = PropertiesUtil.readProperties(propertiesFile);
+        String implementationClass = properties.getProperty("implementation-class");
+
+        if (implementationClass != null) {
+            String implClassPath = implementationClass.replaceAll("\\.", "/");
+            boolean contentMatches = plugin.getAbsolutePath().contains(implClassPath);
+            if (!contentMatches) {
+                throw new GradleException("implementation-class value \'" + implementationClass + " \' in " + propertiesFile + " does not point to the expected class " + plugin + "!");
+            }
+        } else {
+            throw new GradleException("implementation-class property not set in " + propertiesFile);
+        }
     }
 
     private void throwExceptionIfNeeded(Map<String, File> missingPropertiesFiles) {
