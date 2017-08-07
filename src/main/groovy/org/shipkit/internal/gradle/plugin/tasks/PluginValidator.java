@@ -34,9 +34,13 @@ public class PluginValidator {
                     int lastIndexOfProperties = properties.getName().lastIndexOf(DOT_PROPERTIES);
                     if (lastIndexOfProperties != -1) {
                         String pluginExtractedFromProperties = properties.getName().substring(0, lastIndexOfProperties);
-                        if (pluginExtractedFromProperties.toLowerCase().endsWith(convertedPropertiesFleName.toLowerCase())) {
+                        String localConvertedPropertiesFilename = convertedPropertiesFleName;
+                        if (pluginExtractedFromProperties.contains(".")) {
+                            localConvertedPropertiesFilename = "." + localConvertedPropertiesFilename;
+                        }
+                        if (pluginExtractedFromProperties.toLowerCase().endsWith(localConvertedPropertiesFilename.toLowerCase())) {
                             matchingPropertiesFound = true;
-                            LOG.info("plugin " + plugin + " has properties file " + gradleProperties);
+                            LOG.info("plugin " + plugin + " has properties file " + properties);
                             validatePropertiesContent(properties, plugin);
                             break;
                         }
